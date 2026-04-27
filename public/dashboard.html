@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Riego</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .card { background: rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; margin-top: 20px; }
+        .stat-row { display: flex; justify-content: space-between; margin: 10px 0; }
+        .btn-action { background: white; color: black; border-radius: 20px; padding: 10px 20px; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; }
+        canvas { max-height: 250px; }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <h2 style="text-align: center; letter-spacing: 1px;">DASHBOARD MÓVIL</h2>
+        
+        <div id="pantalla-estado">
+            <p style="text-align: center; color: #a2a2a2; font-size: 0.8em; margin-bottom: 20px;">
+                Último riego detectado: <span id="txt-ultimo-riego">Nunca</span>
+            </p>
+
+            <div style="text-align: center; margin: 20px 0;">
+                <img src="https://cdn-icons-png.flaticon.com/512/628/628283.png" width="100" alt="Planta">
+            </div>
+
+            <div class="card">
+                <div class="stat-row"><span>Humedad:</span> <b id="val-humedad">--%</b></div>
+                <div class="stat-row"><span>Litros hoy:</span> <b id="val-litros">-- lts</b></div>
+                <div class="stat-row"><span>Estado:</span> <b id="val-estado">Cargando...</b></div>
+            </div>
+
+            <button class="btn-action" onclick="regarPlanta()">Regar Planta</button>
+            <button class="btn-action" style="margin-top: 10px;" onclick="mostrarPantalla('preferencias')">Programar Riego</button>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 25px;">
+                <button class="btn-action" style="font-size: 11px; margin-top: 0; padding: 12px 5px;" onclick="mostrarPantalla('analytics')">Resumen Semanal</button>
+                <button class="btn-action" style="font-size: 11px; margin-top: 0; padding: 12px 5px;" onclick="mostrarPantalla('tabla')">Historial Detallado</button>
+                <button class="btn-action" style="font-size: 11px; margin-top: 0; padding: 12px 5px;" onclick="mostrarPantalla('grafica-humedad')">Ver Humedad</button>
+                <button class="btn-action" style="font-size: 11px; margin-top: 0; padding: 12px 5px;" onclick="mostrarPantalla('grafica-consumo')">Ver Consumo</button>
+            </div>
+        </div>
+
+        <div id="pantalla-preferencias" style="display: none;">
+            <h3 style="text-align: center;">Configuración de Riego</h3>
+            
+            <div class="card">
+                <div class="stat-row" style="align-items: center;">
+                    <span style="flex: 2; font-size: 14px;">Regar automáticamente cuando la humedad baje de:</span>
+                    <input type="number" id="input-umbral" style="width: 50px; text-align: center; border-radius: 10px; border: none; padding: 5px; background: #333; color: white;" value="20">
+                    <span style="margin-left: 5px;">%</span>
+                </div>
+                
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+                
+                <div class="stat-row" style="align-items: center;">
+                    <span style="flex: 2; font-size: 14px;">Activar automatización:</span>
+                    <label class="switch">
+                        <input type="checkbox" id="check-automatico" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <button class="btn-action" onclick="guardarPreferencias()">Guardar Configuración</button>
+            <button class="btn-action" style="background: transparent; color: white; border: 1px solid white; margin-top: 10px;" onclick="mostrarPantalla('estado')">Cancelar</button>
+        </div>
+
+        <div id="pantalla-graficas" style="display: none;">
+            <h3 id="titulo-grafica" style="text-align: center;">Consumo histórico</h3>
+            <div class="card">
+                <canvas id="miGrafica"></canvas>
+            </div>
+            <button class="btn-action" onclick="mostrarPantalla('estado')">Volver al Dashboard</button>
+        </div>
+
+        <div id="pantalla-analytics" style="display: none;">
+            <h3 style="text-align: center;">Resumen de Riego <br><small style="font-weight: normal; color: #a2a2a2;">Últimos 7 días</small></h3>
+            <div class="card">
+                <div class="stat-row"><span>Sesiones de riego:</span> <b id="ana-sesiones">0</b></div>
+                <div class="stat-row"><span>Total litros:</span> <b id="ana-total">0 lts</b></div>
+                <div class="stat-row"><span>Media por día:</span> <b id="ana-dia">0 lts</b></div>
+                <div class="stat-row"><span>Promedio por planta:</span> <b id="ana-planta">0 lts</b></div>
+                <div class="stat-row"><span>Estado promedio:</span> <b id="ana-estado">Excelente</b></div>
+            </div>
+            <button class="btn-action" onclick="mostrarPantalla('estado')">Volver al Dashboard</button>
+        </div>
+
+        <div id="pantalla-tabla" style="display: none;">
+            <h3 style="text-align: center;">Últimos 10 Registros</h3>
+            <div class="card" style="padding: 10px; overflow-x: auto;">
+                <table style="width: 100%; font-size: 0.8em; text-align: left; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                            <th style="padding: 8px 5px;">Hora</th>
+                            <th style="padding: 8px 5px;">Humedad</th>
+                            <th style="padding: 8px 5px;">Litros</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-cuerpo">
+                        </tbody>
+                </table>
+            </div>
+            <button class="btn-action" onclick="mostrarPantalla('estado')">Volver al Dashboard</button>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
