@@ -25,10 +25,15 @@ mongoose.connect(process.env.MONGO_URI)
 // 1. El ESP32 manda datos aquí (POST) y se guardan en la DB
 app.post('/api/sensores', async (req, res) => {
     try {
-        const { id_maceta, humedad, litros, estado } = req.body;
+        const { id_maceta, humedad, litros, riego_activado, estado } = req.body;
         
-        // 1. Guardar la lectura en el historial
-        const nuevaLectura = new Planta({ id_maceta, humedad, litros_hoy: litros, estado });
+        const nuevaLectura = new Planta({ 
+            id_maceta, 
+            humedad, 
+            litros_hoy: riego_activado ? litros : 0, // Solo guarda litros si hubo riego
+            riego_activado: riego_activado || false,
+            estado 
+        });
         await nuevaLectura.save();
         
         // 2. LÓGICA DE AUTOMATIZACIÓN

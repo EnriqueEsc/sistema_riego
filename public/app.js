@@ -54,11 +54,17 @@ async function mostrarPantalla(tipo) {
         const registros = await res.json();
         const cuerpo = document.getElementById('tabla-cuerpo');
         cuerpo.innerHTML = '';
+
         registros.forEach(r => {
-            const fila = `<tr>
-                <td style="padding: 5px;">${new Date(r.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                <td style="padding: 5px;">${r.humedad}%</td>
-                <td style="padding: 5px;">${r.litros_hoy}</td>
+            // Si hubo riego, ponemos un texto resaltado, si no, un guión
+            const riegoTexto = r.riego_activado ? '<span style="color: #00d2ff;">SÍ</span>' : '<span style="opacity: 0.5;">No</span>';
+            const litrosTexto = r.riego_activado ? `${r.litros_hoy} L` : '-';
+
+            const fila = `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 10px 5px;">${new Date(r.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                <td style="padding: 10px 5px;">${r.humedad}%</td>
+                <td style="padding: 10px 5px;">${riegoTexto}</td>
+                <td style="padding: 10px 5px;">${litrosTexto}</td>
             </tr>`;
             cuerpo.innerHTML += fila;
         });
