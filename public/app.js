@@ -5,20 +5,25 @@ Chart.defaults.color = '#ffffff';
 Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)'; // Líneas de la cuadrícula más sutiles
 
 // Actualizar el estado principal y el "Último riego"
-// Actualizar el estado principal y el "Último riego"
 async function actualizarEstado() {
     try {
-        const res = await fetch('/api/historial');
-        const datos = await res.json();
+        // 1. Pedimos el historial para la humedad y el estado
+        const resHistorial = await fetch('/api/historial');
+        const datos = await resHistorial.json();
         
+        // 2. Pedimos el total acumulado de hoy (Nuevo)
+        const resHoy = await fetch('/api/stats-hoy');
+        const statsHoy = await resHoy.json();
+
         if (datos && datos.length > 0) {
             const ultimo = datos[datos.length - 1];
             
             document.getElementById('val-humedad').innerText = `${ultimo.humedad}%`;
-            document.getElementById('val-litros').innerText = `${ultimo.litros_hoy} lts`;
             document.getElementById('val-estado').innerText = ultimo.estado;
             
-            // Solo actualizamos el ID que sí existe en tu nuevo diseño
+            // ¡Aquí está el truco! Ya no usamos ultimo.litros_hoy, usamos el acumulado real
+            document.getElementById('val-litros').innerText = `${statsHoy.total_hoy} lts`;
+            
             const fechaString = new Date(ultimo.fecha).toLocaleString('es-MX');
             document.getElementById('txt-ultimo-riego').innerText = fechaString;
         }

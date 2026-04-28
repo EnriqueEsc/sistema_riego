@@ -155,3 +155,24 @@ app.get('/api/analytics', async (req, res) => {
         res.status(500).json({ error: "Error en analíticas" });
     }
 });
+
+
+// Endpoint para obtener el total real de litros consumidos HOY
+app.get('/api/stats-hoy', async (req, res) => {
+    try {
+        const inicioDia = new Date();
+        inicioDia.setHours(0, 0, 0, 0); // Ponemos el reloj a las 00:00:00
+
+        const registrosHoy = await Planta.find({ 
+            fecha: { $gte: inicioDia },
+            riego_activado: true 
+        });
+
+        // Sumamos todos los litros de los registros que sí fueron riego
+        const totalHoy = registrosHoy.reduce((acc, reg) => acc + (reg.litros_hoy || 0), 0);
+        
+        res.json({ total_hoy: totalHoy.toFixed(2) });
+    } catch (error) {
+        res.status(500).json({ error: "Error calculando total diario" });
+    }
+});
