@@ -1,8 +1,9 @@
-require('dotenv').config(); // Cargar variables de entorno
+require('dotenv').config(); 
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const Planta = require('./models/Planta'); // Importamos tu modelo
+const Planta = require('./models/Planta'); 
+const Configuracion = require('./models/Configuracion'); // <--- ¡AGREGA ESTA LÍNEA!
 
 const app = express();
 
