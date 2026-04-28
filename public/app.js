@@ -33,11 +33,14 @@ async function actualizarEstado() {
 }
 
 // Modificar mostrarPantalla para incluir Analytics y Tabla
+let datosHistorialGlobal = []; // Variable para guardar los datos y filtrarlos rápido
+
 async function mostrarPantalla(tipo) {
     const pantallas = ['pantalla-estado', 'pantalla-graficas', 'pantalla-preferencias', 'pantalla-analytics', 'pantalla-tabla'];
     pantallas.forEach(p => document.getElementById(p).style.display = 'none');
 
     if (tipo === 'estado') document.getElementById('pantalla-estado').style.display = 'block';
+    
     if (tipo === 'preferencias') {
         document.getElementById('pantalla-preferencias').style.display = 'block';
         cargarPreferencias();
@@ -56,39 +59,22 @@ async function mostrarPantalla(tipo) {
     if (tipo === 'tabla') {
         document.getElementById('pantalla-tabla').style.display = 'block';
         const res = await fetch('/api/historial');
-        const registros = await res.json();
-        const cuerpo = document.getElementById('tabla-cuerpo');
-        cuerpo.innerHTML = '';
-
-        registros.forEach(r => {
-            // Si hubo riego, ponemos un texto resaltado, si no, un guión
-            const riegoTexto = r.riego_activado ? '<span style="color: #00d2ff;">SÍ</span>' : '<span style="opacity: 0.5;">No</span>';
-            const litrosTexto = r.riego_activado ? `${r.litros_hoy} L` : '-';
-
-            const fila = `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <td style="padding: 10px 5px;">${new Date(r.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                <td style="padding: 10px 5px;">${r.humedad}%</td>
-                <td style="padding: 10px 5px;">${riegoTexto}</td>
-                <td style="padding: 10px 5px;">${litrosTexto}</td>
-            </tr>`;
-            cuerpo.innerHTML += fila;
-        });
+        datosHistorialGlobal = await res.json(); // Guardamos los 100 registros
+        renderizarTabla(); // Llamamos a la función que los dibuja
     }
 
     if (tipo === 'grafica-humedad' || tipo === 'grafica-consumo') {
         document.getElementById('pantalla-graficas').style.display = 'block';
-
         const res = await fetch('/api/historial');
         const historial = await res.json();
-
-        const labels = historial.map(d => new Date(d.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
         
         if (chartInstance) chartInstance.destroy(); 
-
         const ctx = document.getElementById('miGrafica').getContext('2d');
         
         if (tipo === 'grafica-humedad') {
             document.getElementById('titulo-grafica').innerText = "Historial de Humedad (%)";
+            const labels = historial.map(d => new Date(d.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -104,20 +90,49 @@ async function mostrarPantalla(tipo) {
                 options: { scales: { y: { beginAtZero: true, max: 100 } } }
             });
         } else {
-            document.getElementById('titulo-grafica').innerText = "Consumo Diario (Lts)";
+            // GRÁFICA DE CONSUMO (Solo mostramos eventos de riego)
+            document.getElementById('titulo-grafica').innerText = "Eventos de Consumo (Lts)";
+            const historialRiegos = historial.filter(r => r.riego_activado === true);
+            const labelsRiegos = historialRiegos.map(d => new Date(d.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: labelsRiegos,
                     datasets: [{
-                        label: 'Litros',
-                        data: historial.map(d => d.litros_hoy),
-                        backgroundColor: '#ffffff'
+                        label: 'Litros consumidos',
+                        data: historialRiegos.map(d => d.litros_hoy),
+                        backgroundColor: '#00d2ff',
+                        borderRadius: 5
                     }]
                 }
             });
         }
     }
+}
+
+// Nueva función para pintar la tabla y que el switch funcione
+function renderizarTabla() {
+    const soloRiegos = document.getElementById('check-filtro-tabla').checked;
+    const cuerpo = document.getElementById('tabla-cuerpo');
+    cuerpo.innerHTML = '';
+
+    // Filtramos si el switch está activado
+    const datosAMostrar = soloRiegos ? datosHistorialGlobal.filter(r => r.riego_activado) : datosHistorialGlobal;
+
+    datosAMostrar.forEach(r => {
+        const riegoTexto = r.riego_activado ? '<span style="color: #00d2ff; font-weight: bold;">SÍ</span>' : '<span style="opacity: 0.5;">No</span>';
+        const litrosTexto = r.riego_activado ? `<b>${r.litros_hoy} L</b>` : '-';
+        const fondoFila = r.riego_activado ? 'rgba(0, 210, 255, 0.1)' : 'transparent'; // Ilumina la fila si se regó
+
+        const fila = `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: ${fondoFila};">
+            <td style="padding: 10px 5px;">${new Date(r.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+            <td style="padding: 10px 5px;">${r.humedad}%</td>
+            <td style="padding: 10px 5px;">${riegoTexto}</td>
+            <td style="padding: 10px 5px;">${litrosTexto}</td>
+        </tr>`;
+        cuerpo.innerHTML += fila;
+    });
 }
 
 async function regarPlanta() {

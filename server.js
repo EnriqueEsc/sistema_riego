@@ -92,10 +92,11 @@ app.listen(PORT, () => {
 });
 
 // Endpoint para obtener las últimas 10 lecturas para las gráficas
+// Endpoint para obtener las últimas lecturas para las gráficas y tablas
 app.get('/api/historial', async (req, res) => {
     try {
-        const historial = await Planta.find().sort({ fecha: -1 }).limit(10);
-        // Los invertimos para que el más reciente salga a la derecha en la gráfica
+        // Subimos a 100 para abarcar un buen lapso de tiempo (Ej. la última hora)
+        const historial = await Planta.find().sort({ fecha: -1 }).limit(100);
         res.json(historial.reverse());
     } catch (error) {
         res.status(500).json({ error: "Error al obtener historial" });

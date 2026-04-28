@@ -89,15 +89,24 @@
         </div>
 
         <div id="pantalla-tabla" style="display: none;">
-            <h3 style="text-align: center;">Últimos 10 Registros</h3>
-            <div class="card" style="padding: 10px; overflow-x: auto;">
+            <h3 style="text-align: center;">Historial Detallado</h3>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 10px 10px 10px;">
+                <span style="font-size: 14px;">Mostrar solo riegos:</span>
+                <label class="switch">
+                    <input type="checkbox" id="check-filtro-tabla" onchange="renderizarTabla()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="card" style="padding: 10px; max-height: 350px; overflow-y: auto;">
                 <table style="width: 100%; font-size: 0.8em; text-align: left; border-collapse: collapse;">
                     <thead>
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
-                            <th style="padding: 10px 5px;">Hora</th>
-                            <th style="padding: 10px 5px;">Humedad</th>
-                            <th style="padding: 10px 5px;">Riego</th>
-                            <th style="padding: 10px 5px;">Consumo</th>
+                            <th style="padding: 10px 5px; position: sticky; top: 0; background: #0b1a30;">Hora</th>
+                            <th style="padding: 10px 5px; position: sticky; top: 0; background: #0b1a30;">Hum.</th>
+                            <th style="padding: 10px 5px; position: sticky; top: 0; background: #0b1a30;">Riego</th>
+                            <th style="padding: 10px 5px; position: sticky; top: 0; background: #0b1a30;">Lts.</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-cuerpo">
